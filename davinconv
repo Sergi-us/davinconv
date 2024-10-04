@@ -1,54 +1,69 @@
-#! /bin/bash
+#!/bin/bash
+# Converter für DaVinci Resolv von https://github.com/gohny/davinconv
+# über AUR auch verfügbar yay -S davinconv
+
 VERSION=0.1.0
+
+# Aktueller Benutzername
 USERNAME=$(whoami)
-VIDDIR=/home/"$USERNAME"/Videos/davinconv
+
+# Verzeichnis für Videos
+VIDDIR=/home/"$USERNAME"/Videos/davinci
+
+# Aktuelles Arbeitsverzeichnis
 WHEREAMI=$(pwd)
 
+# Erstelle Verzeichnisse, falls sie nicht existieren
 if [ ! -d "$VIDDIR" ]; then
     mkdir -p "$VIDDIR"
     mkdir -p "$VIDDIR"/converted
     mkdir -p "$VIDDIR"/exported
 fi
 
+# Funktion zur Anzeige der Hilfe
 Help() {
     echo ""
     echo "  ............................................................"
-    echo "  . Davinconv - video converter for Davinci Resolve on Linux ."
-    echo "  . v0.1.0    by Gohny                                       ."
+    echo "  . Davinconv - Video-Konverter für Davinci Resolve unter Linux ."
+    echo "  . v0.1.0    von Gohny                                         ."
     echo "  ............................................................"
     echo ""
-    echo "Usage: davinconv [-c|C|e|E|h|R]"
+    echo "Verwendung: davinconv [-c|C|e|E|h|R]"
     echo ""
-    echo "Options:"
-    echo "   {-c} [file]    - Convert video to the MJPEG codec that can be read by Davinci Resolve."
-    echo "   {-C}           - Convert all videos in current directory to the MJPEG codec that can be read by Davinci Resolve."
-    echo "   {-e} [file]    - Export converted video back to the H264 codec."
-    echo "   {-E}           - Export all converted videos stored in $VIDDIR/converted back to the H264 codec."
-    echo "   {-h}           - Display this message."
-    echo "   {-R}           - Remove all converted videos stored in $VIDDIR/converted."
+    echo "Optionen:"
+    echo "   {-c} [Datei]   - Konvertiert Video in den MJPEG-Codec, der von Davinci Resolve gelesen werden kann."
+    echo "   {-C}           - Konvertiert alle Videos im aktuellen Verzeichnis in den MJPEG-Codec."
+    echo "   {-e} [Datei]   - Exportiert konvertiertes Video zurück in den H264-Codec."
+    echo "   {-E}           - Exportiert alle konvertierten Videos aus $VIDDIR/converted zurück in den H264-Codec."
+    echo "   {-h}           - Zeigt diese Nachricht an."
+    echo "   {-R}           - Entfernt alle konvertierten Videos aus $VIDDIR/converted."
     echo ""
-    echo "All converted and exported videos are stored in: ~/Videos/davinconv"
+    echo "Alle konvertierten und exportierten Videos werden in ~/Videos/davinconv gespeichert"
     echo ""
-    echo "It is recommended to watch https://www.youtube.com/watch?v=WLcW4UWPC5Y before using the script."
+    echo "Es wird empfohlen, https://www.youtube.com/watch?v=WLcW4UWPC5Y vor der Verwendung des Skripts anzusehen."
     echo ""
-    echo "LICENSE: GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007"
+    echo "LIZENZ: GNU GENERAL PUBLIC LICENSE Version 3, 29. Juni 2007"
     echo "https://github.com/gohny/davinconv"
 }
 
+# Funktion zur Konvertierung eines einzelnen Videos
 Convert() {
     ffmpeg -i "$i" -vcodec mjpeg -q:v 2 -acodec pcm_s16be -q:a 0 -f mov "$VIDDIR"/converted/${i%.*}.mov
 }
 
+# Funktion zur Konvertierung aller Videos im aktuellen Verzeichnis
 ConvertAll() {
     for i in *.mp4 *.mkv; do
         ffmpeg -i "$i" -vcodec mjpeg -q:v 2 -acodec pcm_s16be -q:a 0 -f mov "$VIDDIR"/converted/${i%.*}.mov
     done
 }
 
+# Funktion zum Exportieren eines einzelnen Videos
 Export() {
     ffmpeg -i "$VIDDIR"/converted/"$i" -c:v libx264 -preset ultrafast -crf 0 "$VIDDIR"/exported/${i%.*}.mp4
 }
 
+# Funktion zum Exportieren aller konvertierten Videos
 ExportAll() {
     cd "$VIDDIR"/converted
         for i in *.mov; do
@@ -57,32 +72,29 @@ ExportAll() {
     cd "$WHEREAMI"
 }
 
+# Funktion zum Entfernen aller konvertierten Videos
 RemoveAll() {
-
     while true; do
-
-        echo "You are about to remove ALL converted videos stored in $VIDDIR/converted."
-        read -p "Do you want to continue? (y/n) " yn
-
+        echo "Sie sind dabei, ALLE konvertierten Videos in $VIDDIR/converted zu entfernen."
+        read -p "Möchten Sie fortfahren? (j/n) " yn
         case $yn in
-            [yY] )
+            [jJ] )
                 echo ""
-                echo "please wait..."
+                echo "Bitte warten..."
                 echo ""
                 sleep 1
                 rm -rf "$VIDDIR"/converted/*
                 break;;
-
             [nN] )
-                echo "No changes have been made."
+                echo "Es wurden keine Änderungen vorgenommen."
                 exit;;
-
             * )
-                echo "Error: please input y or n";;
+                echo "Fehler: Bitte geben Sie j oder n ein";;
         esac
     done
 }
 
+# Hauptprogrammschleife zur Verarbeitung der Kommandozeilenargumente
 while getopts ":c:Ce:EhR" OPTION; do
     case $OPTION in
         c)
@@ -106,11 +118,12 @@ while getopts ":c:Ce:EhR" OPTION; do
             RemoveAll
             exit;;
         *)
-            echo "Error: Invalid option or argument not provided!"
-            echo "For help use: davinconv -h"
+            echo "Fehler: Ungültige Option oder Argument nicht angegeben!"
+            echo "Für Hilfe verwenden Sie: davinconv -h"
             exit;;
     esac
 done
 
+# Wenn keine Argumente angegeben wurden, zeige die Hilfe an
 Help
 exit
